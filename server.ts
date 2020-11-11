@@ -12,7 +12,7 @@ const PORT = process.env.PORT;
 const app = express();
 
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// app.use(express.urlencoded({ extended: true }));
 
 initializePassport(passport);
 
@@ -34,7 +34,7 @@ app.use(
     if (err) {
       res.json({
         status: 'failed',
-        err: err.message,
+        error: err.message,
       });
     }
   },

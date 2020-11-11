@@ -1,5 +1,6 @@
 import express from 'express';
 import { ArticleModel } from '../models/Article';
+import { User } from './User';
 interface Comment {
   _id?: string;
   body: string;
@@ -9,7 +10,8 @@ export interface Article {
   title: string;
   body: string;
   comment: Array<Comment>;
-  owner: string;
+  owner?: string;
+  createdAt: number;
 }
 
 export class ArticleCtrl {
@@ -19,7 +21,25 @@ export class ArticleCtrl {
     next: express.NextFunction,
   ) {
     try {
-      const data = (await ArticleModel.find({}).lean()) as Article[];
+      let data = await ArticleModel.find({});
+      res.json({
+        result: 'success',
+        data,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  static async getOne(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) {
+    try {
+      let data = await ArticleModel.findById(req.params.id).populate('owner', [
+        'username',
+        'imgUrl',
+      ]);
       res.json({
         result: 'success',
         data,
@@ -34,11 +54,13 @@ export class ArticleCtrl {
     next: express.NextFunction,
   ) {
     try {
+      const owner = req.user as User;
       const data: Article = {
         title: req.body.title,
         body: req.body.body,
         comment: [],
-        owner: req.body.owner,
+        owner: owner.id,
+        createdAt: Date.now(),
       };
       const article = await ArticleModel.create(data);
 

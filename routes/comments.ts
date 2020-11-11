@@ -1,7 +1,7 @@
 import { Router } from 'express';
+import passport from 'passport';
 import { CommentCtrl } from '../controllers/Comment';
 
-export const comment = Router();
+export const comments = Router();
 
-comment.post('/:id', CommentCtrl.add);
-comment.delete('/:id', CommentCtrl.delete);
+comments.delete('/:id', passport.authenticate('jwt'), CommentCtrl.delete);

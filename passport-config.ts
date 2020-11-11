@@ -3,7 +3,32 @@ import { User } from './controllers/User';
 import { UserModel } from './models/User';
 import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt';
 
-export function initializePassport(passport: any) {
+// export const isAuth = (
+//   req: express.Request,
+//   res: express.Response,
+//   next: express.NextFunction,
+// ) => {
+//   console.log(req.isAuthenticated());
+//   if (req.isAuthenticated()) {
+//     return next();
+//   } else {
+//     next(Error('No access'));
+//   }
+// };
+
+// export const notAuth = (
+//   req: express.Request,
+//   res: express.Response,
+//   next: express.NextFunction,
+// ) => {
+//   if (!req.isAuthenticated()) {
+//     return next();
+//   } else {
+//     next(Error('You are authorised'));
+//   }
+// };
+
+export const initializePassport = (passport: any) => {
   const authenticateUser = async (
     email: string,
     password: string,
@@ -36,7 +61,9 @@ export function initializePassport(passport: any) {
       },
       async (payload, done) => {
         try {
-          const data = (await UserModel.findById(payload.data.id))?.toObject();
+          const data: User = (
+            await UserModel.findById(payload.data.id)
+          )?.toObject();
           return done(null, data);
         } catch (error) {
           return done(error, false, { message: 'Not authorized' });
@@ -50,4 +77,4 @@ export function initializePassport(passport: any) {
   passport.deserializeUser(async (id: string, done: any) => {
     UserModel.findOne({ _id: id }, (err, user: any) => done(null, user));
   });
-}
+};

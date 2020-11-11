@@ -1,12 +1,5 @@
 import { model, Schema } from 'mongoose';
 
-const CommentSchema = new Schema({
-  body: {
-    required: true,
-    type: String,
-  },
-});
-
 export const ArticleSchema = new Schema({
   title: {
     required: true,
@@ -18,11 +11,11 @@ export const ArticleSchema = new Schema({
     type: String,
     unique: true,
   },
-  comments: [CommentSchema],
   owner: {
     type: Schema.Types.ObjectId,
     ref: 'User',
   },
+  createdAt: Date,
 });
 
 export const ArticleModel = model('Article', ArticleSchema);

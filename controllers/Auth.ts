@@ -1,5 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import { imgPath, User } from './User';
 
 export class LoginCtrl {
   static async login(
@@ -21,29 +22,17 @@ export class LoginCtrl {
       next(error);
     }
   }
-  static async logout(
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction,
-  ) {
-    try {
-      req.logout();
-      res.send({
-        result: 'success',
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
   static async show(
     req: express.Request,
     res: express.Response,
     next: express.NextFunction,
   ) {
     try {
+      const data: User = { ...req.user } as User;
+      data.imgUrl = imgPath(req.headers.host, data.imgUrl);
       res.json({
         status: 'success',
-        data: req.user,
+        data: data,
       });
     } catch (error) {
       next(error);

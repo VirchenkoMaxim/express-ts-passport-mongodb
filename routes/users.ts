@@ -1,19 +1,18 @@
 import { Router } from 'express';
+import passport from 'passport';
 import { UserCtrl } from '../controllers/User';
 import { upload } from '../core/multer';
 import { registerValidations } from '../validations/register';
-import { isAuth, notAuth } from './articles';
 
 export const users = Router();
 
 users.get('/:id', UserCtrl.index);
-users.post(
-  '/',
-  notAuth,
-  registerValidations,
+users.post('/', upload.single('imgUrl'), registerValidations, UserCtrl.create);
+users.put(
+  '/:id',
+  passport.authenticate('jwt'),
   upload.single('imgUrl'),
-  UserCtrl.create,
+  UserCtrl.update,
 );
-users.put('/:id', isAuth, upload.single('imgUrl'), UserCtrl.update);
-users.delete('/:id', isAuth, UserCtrl.delete);
+users.delete('/:id', passport.authenticate('jwt'), UserCtrl.delete);
 users.get('/:id/articles', UserCtrl.getUserArticles);

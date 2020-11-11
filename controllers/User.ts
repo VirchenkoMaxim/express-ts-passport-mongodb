@@ -7,23 +7,21 @@ import { ArticleModel } from '../models/Article';
 export interface User {
   id?: string;
   email: string;
-  password: string;
+  password?: string;
   username: string;
   imgUrl: string;
 }
-const imgPath = (host: string | undefined, imgPath: string): string => {
+export const imgPath = (host: string | undefined, imgPath: string): string => {
   return `${host}/${imgPath}`;
 };
 
 class UserController {
   async index(req: express.Request, res: express.Response) {
-    console.log(req.session);
     try {
       let data: User = (await UserModel.findById(req.params.id))?.toObject({
-        getters: true,
+        // getters: true,
       });
       data.imgUrl = imgPath(req.headers.host, data.imgUrl);
-
       res.json({
         status: 'success',
         data,
@@ -37,6 +35,7 @@ class UserController {
   }
   async create(req: express.Request, res: express.Response) {
     try {
+      console.log(req);
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
@@ -47,9 +46,7 @@ class UserController {
         username: req.body.username,
         imgUrl: req.file.path,
       };
-      const data: User = (await UserModel.create(user)).toObject({
-        getters: true,
-      });
+      const data: User = (await UserModel.create(user)).toObject();
       data.imgUrl = imgPath(req.headers.host, data.imgUrl);
       res.json({
         status: 'success',
