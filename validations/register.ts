@@ -19,10 +19,5 @@ export const registerValidations = [
       }
       return true;
     }),
-  body('username')
-    .not()
-    .isEmpty()
-    .withMessage('Field required')
-    .isLength({ min: 3 })
-    .withMessage('Min length 3 symbols'),
+  body('imgUrl').isEmpty().withMessage('Field required'),
 ];

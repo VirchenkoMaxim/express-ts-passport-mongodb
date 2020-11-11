@@ -1,32 +1,7 @@
 import { Strategy } from 'passport-local';
-import { User } from './controllers/User';
+import { ReqUser, ResUser } from './controllers/User';
 import { UserModel } from './models/User';
 import { ExtractJwt, Strategy as JwtStrategy } from 'passport-jwt';
-
-// export const isAuth = (
-//   req: express.Request,
-//   res: express.Response,
-//   next: express.NextFunction,
-// ) => {
-//   console.log(req.isAuthenticated());
-//   if (req.isAuthenticated()) {
-//     return next();
-//   } else {
-//     next(Error('No access'));
-//   }
-// };
-
-// export const notAuth = (
-//   req: express.Request,
-//   res: express.Response,
-//   next: express.NextFunction,
-// ) => {
-//   if (!req.isAuthenticated()) {
-//     return next();
-//   } else {
-//     next(Error('You are authorised'));
-//   }
-// };
 
 export const initializePassport = (passport: any) => {
   const authenticateUser = async (
@@ -35,7 +10,7 @@ export const initializePassport = (passport: any) => {
     done: any,
   ) => {
     try {
-      const user: User = (
+      const user: ResUser = (
         await UserModel.findOne({ email: email }).select('+password')
       )?.toObject();
       if (!user || password !== user.password) {
@@ -61,7 +36,7 @@ export const initializePassport = (passport: any) => {
       },
       async (payload, done) => {
         try {
-          const data: User = (
+          const data: ReqUser = (
             await UserModel.findById(payload.data.id)
           )?.toObject();
           return done(null, data);
@@ -71,7 +46,7 @@ export const initializePassport = (passport: any) => {
       },
     ),
   );
-  passport.serializeUser((user: User, done: any) => {
+  passport.serializeUser((user: ReqUser, done: any) => {
     done(null, user.id);
   });
   passport.deserializeUser(async (id: string, done: any) => {

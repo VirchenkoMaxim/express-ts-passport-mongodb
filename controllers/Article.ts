@@ -1,16 +1,24 @@
 import express from 'express';
 import { ArticleModel } from '../models/Article';
-import { User } from './User';
-interface Comment {
+import { imgPath } from '../utils/helpFunctions';
+import { ReqUser } from './User';
+export interface Comment {
   _id?: string;
   body: string;
 }
-export interface Article {
+
+export interface ReqArticle {
   _id?: string;
   title: string;
   body: string;
-  comment: Array<Comment>;
-  owner?: string;
+  owner: string;
+  createdAt: number;
+}
+export interface ResArticle {
+  title: string;
+  body: string;
+  id: string;
+  owner: ReqUser;
   createdAt: number;
 }
 
@@ -36,10 +44,13 @@ export class ArticleCtrl {
     next: express.NextFunction,
   ) {
     try {
-      let data = await ArticleModel.findById(req.params.id).populate('owner', [
-        'username',
-        'imgUrl',
-      ]);
+      let data: ResArticle = (
+        await ArticleModel.findById(req.params.id).populate('owner', [
+          'username',
+          'imgUrl',
+        ])
+      )?.toObject();
+      data.owner.imgUrl = imgPath(data.owner.imgUrl);
       res.json({
         result: 'success',
         data,
@@ -54,11 +65,10 @@ export class ArticleCtrl {
     next: express.NextFunction,
   ) {
     try {
-      const owner = req.user as User;
-      const data: Article = {
+      const owner: ReqUser = req.user as ReqUser;
+      const data: ReqArticle = {
         title: req.body.title,
         body: req.body.body,
-        comment: [],
         owner: owner.id,
         createdAt: Date.now(),
       };
@@ -78,7 +88,7 @@ export class ArticleCtrl {
     next: express.NextFunction,
   ) {
     try {
-      const article: Article = await ArticleModel.updateOne(
+      const article: ReqArticle = await ArticleModel.updateOne(
         { _id: req.params.id },
         {
           title: req.body.title,

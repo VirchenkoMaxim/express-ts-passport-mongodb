@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { imgPath, User } from './User';
+import { imgPath } from '../utils/helpFunctions';
+import { ReqUser } from './User';
 
 export class LoginCtrl {
   static async login(
@@ -28,8 +29,8 @@ export class LoginCtrl {
     next: express.NextFunction,
   ) {
     try {
-      const data: User = { ...req.user } as User;
-      data.imgUrl = imgPath(req.headers.host, data.imgUrl);
+      const data: ReqUser = { ...req.user } as ReqUser;
+      data.imgUrl = imgPath(data.imgUrl);
       res.json({
         status: 'success',
         data: data,

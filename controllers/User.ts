@@ -3,74 +3,102 @@ import { UserModel } from '../models/User';
 import _ from 'lodash';
 import { validationResult } from 'express-validator';
 import { ArticleModel } from '../models/Article';
+import fs from 'fs';
+import { join } from 'path';
+import { imgPath } from '../utils/helpFunctions';
 
-export interface User {
-  id?: string;
+export interface ResUser {
   email: string;
-  password?: string;
+  password: string;
   username: string;
   imgUrl: string;
 }
-export const imgPath = (host: string | undefined, imgPath: string): string => {
-  return `${host}/${imgPath}`;
-};
+export interface ReqUser {
+  id: string;
+  email?: string;
+  username: string;
+  imgUrl: string;
+}
 
-class UserController {
-  async index(req: express.Request, res: express.Response) {
+export class UserController {
+  private customFilePath = 'uploads/custom.png';
+
+  async index(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) {
     try {
-      let data: User = (await UserModel.findById(req.params.id))?.toObject({
-        // getters: true,
+      let data: ReqUser = (await UserModel.findById(req.params.id))?.toObject({
+        getters: true,
       });
-      data.imgUrl = imgPath(req.headers.host, data.imgUrl);
+      data.imgUrl = imgPath(data.imgUrl);
       res.json({
         status: 'success',
         data,
       });
     } catch (error) {
-      res.json({
-        status: 'failed',
-        error: error.message,
-      });
+      next(error);
     }
   }
-  async create(req: express.Request, res: express.Response) {
+
+  async create(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) {
     try {
-      console.log(req);
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
       }
-      const user: User = {
+
+      const path = req.file?.path.split('\\').join('/') || this.customFilePath;
+      const user: ResUser = {
         email: req.body.email,
         password: req.body.password,
         username: req.body.username,
-        imgUrl: req.file.path,
+        imgUrl: path,
       };
-      const data: User = (await UserModel.create(user)).toObject();
-      data.imgUrl = imgPath(req.headers.host, data.imgUrl);
+
+      const data: ReqUser = (await UserModel.create(user)).toObject();
+      data.imgUrl = imgPath(data.imgUrl);
       res.json({
         status: 'success',
         data,
       });
     } catch (error) {
-      res.json({
-        status: 'failed',
-        error: error,
-        message: error.message,
-      });
+      if (req.file) {
+        const filePath = join(__dirname, '..', req.file.path);
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+        });
+      }
+      next(error);
     }
   }
-  async update(req: express.Request, res: express.Response) {
+
+  async update(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) {
     try {
-      const user = {
+      const path = req.file.path.split('\\').join('/');
+      const user: ResUser = {
         email: req.body.email,
         password: req.body.password,
         username: req.body.username,
-        imgUrl: req.file?.path,
+        imgUrl: path,
       };
-
-      const filteredUser = _.pickBy(user, (v) => v !== null && v !== undefined);
-      const data: User = await UserModel.updateOne(
+      const filteredUser = _.pickBy(
+        user,
+        (v: string) => v !== null && v !== undefined,
+      );
+      const data: ReqUser = await UserModel.updateOne(
         { _id: req.params.id },
         filteredUser,
       );
@@ -79,24 +107,36 @@ class UserController {
         data,
       });
     } catch (error) {
-      res.json({
-        status: 'failed',
-        error,
-      });
+      next(error);
     }
   }
-  async delete(req: express.Request, res: express.Response) {
+  async delete(
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) {
     try {
+      const user: ReqUser = (await UserModel.findById(req.params.id))?.toObject(
+        {
+          getters: true,
+        },
+      );
+      if (this.customFilePath != user.imgUrl) {
+        const filepath = join(__dirname, '..', user.imgUrl);
+        fs.unlink(filepath, (err) => {
+          if (err) {
+            console.error(err);
+            return;
+          }
+        });
+      }
       const data = await UserModel.deleteOne({ _id: req.params.id });
       res.json({
         status: 'success',
         data,
       });
     } catch (error) {
-      res.json({
-        status: 'failed',
-        error,
-      });
+      next(error);
     }
   }
   async getUserArticles(req: express.Request, res: express.Response) {
@@ -105,7 +145,6 @@ class UserController {
         'owner',
         'username',
       );
-
       res.json({
         status: 'success',
         data,
